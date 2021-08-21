@@ -2,7 +2,7 @@ window.DownloadApi = {
    converter: {
       plugin: arg => `https://raw.githubusercontent.com/slow/better-discord-plugins/master/${arg}/${arg}.plugin.js`,
       theme: arg => `https://raw.githubusercontent.com/slow/${arg}/master/${arg.split('-').map(a => `${a[0].toUpperCase()}${a.slice(1)}`).join('')}.theme.css`,
-      custom: arg => decodeURI(arg)
+      custom: arg => `https://raw.githubusercontent.com/slow/better-discord-plugins/master/${arg}`,
    },
    convert: (parameterString, error) => {
       if (typeof parameterString == 'string') for (let parameter in window.DownloadApi.converter) {
