@@ -1,38 +1,40 @@
-window.DownloadApi = {
-   converter: {
-      plugin: arg => `https://raw.githubusercontent.com/discord-modifications/better-discord-plugins/master/${arg}/${arg}.plugin.js`,
-      theme: arg => `https://raw.githubusercontent.com/discord-modifications/${arg}/master/${arg.split('-').map(a => `${a[0].toUpperCase()}${a.slice(1)}`).join('')}.theme.css`,
-      custom: arg => `https://raw.githubusercontent.com/discord-modifications/better-discord-plugins/master/${arg}`,
-   },
-   convert: (parameterString, error) => {
-      if (typeof parameterString == 'string') for (let parameter in window.DownloadApi.converter) {
-         let arg = (parameterString.split(`?${parameter}=`)[1] || '').split('?')[0] || '';
-         if (arg) {
-            window.DownloadApi.download(window.DownloadApi.converter[parameter](arg), error);
-            break;
-         }
-         else if (parameterString.endsWith(`?${parameter}`)) {
-            window.DownloadApi.download(window.DownloadApi.converter[parameter](), error);
-            break;
+export default class Downloader {
+   static handle(params) {
+      const link = Downloader.convert(params);
+      if (!link) throw 'Failed to convert.';
+
+      return Downloader.download(link);
+   }
+
+   static convert(params) {
+      if (typeof params !== 'string') return null;
+
+      const links = Downloader.links;
+      for (const type in links) {
+         const parsedType = (params.split(`?${type}=`)[1] || '').split('?')[0] || '';
+         if (parsedType) {
+            return links[type](parsedType);
          }
       }
-   },
-   download: (url, error) => {
-      if (!url) return error && error('No URL!');
-      if (url.indexOf('raw.githubusercontent.com') == -1 && url.indexOf('github.io') == -1) return error && error(`<a href='${url}'>${url}</a> not a valid GitHub File URL!`);
-      const xhttp = new XMLHttpRequest();
-      xhttp.onload = function () {
-         if (this.status == 200) {
-            const tempLink = document.createElement('a');
-            tempLink.href = window.URL.createObjectURL(new Blob([this.response], { type: `text/${url.split('.').pop()}` }));
-            tempLink.download = url.split('/').pop();
-            tempLink.click();
-         }
-         if (this.status == 404) error && error(`GitHub File <a href'${url}'>${url}</a> does not exist!`);
-      };
-      xhttp.onerror = function () { error && error(`GitHub File <a href='${url}'>${url}</a> does not exist!`); };
-      xhttp.open('GET', url, true);
-      xhttp.send();
-      error('Download was successful, you may now close this page.', false)
+
+      throw 'Failed to convert.';
    }
-};
+
+   static get links() {
+      return {
+         plugin: arg => `https://raw.githubusercontent.com/discord-modifications/better-discord-plugins/master/${arg}/${arg}.plugin.js`,
+         theme: arg => `https://raw.githubusercontent.com/discord-modifications/${arg}/master/${arg.split('-').map(a => `${a[0].toUpperCase()}${a.slice(1)}`).join('')}.theme.css`,
+         custom: arg => `https://raw.githubusercontent.com/discord-modifications/better-discord-plugins/master/${arg}`
+      };
+   }
+
+   static async download(url) {
+      if (!url) throw `Missing URL.`;
+      if (!~url.indexOf('raw.githubusercontent.com') && !~url.indexOf('github.io')) {
+         throw `${url} isn't a valid GitHub File URL.`;
+      }
+
+      const res = await fetch(url).then(r => r.blob());
+      window.download(res, url.split('/').pop());
+   }
+}
